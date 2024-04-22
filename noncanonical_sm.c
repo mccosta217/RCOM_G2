@@ -110,7 +110,7 @@ while(state != 7)
       case Flag_rec:
         res = read(fd, buf, 1);
 
-        if (buf[0] == 0x03)
+        if (buf[0] == 0x01)
         {
           bufrec[1] = 0x03;
           printf("0x%02x\n", bufrec[1]);

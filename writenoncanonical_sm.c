@@ -90,7 +90,7 @@ int main(int argc, char** argv)
     BCC = 0x03^0x08;
 
     buf[0] = 0x5c;
-    buf[1] = 0x03;
+    buf[1] = 0x01;
     buf[2] = 0x08;
     buf[3] = BCC;
     buf[4] = 0x5c;
