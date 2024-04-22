@@ -112,7 +112,7 @@ while(state != 7)
 
         if (buf[0] == 0x01)
         {
-          bufrec[1] = 0x03;
+          bufrec[1] = 0x01;
           printf("0x%02x\n", bufrec[1]);
           state = A_rec;
         }
