@@ -13,10 +13,18 @@
 
 volatile int STOP=FALSE;
 
-typedef struct sm 
+#define Start 0
+#define Flag_rec 1
+#define A_rec 2
+#define C_rec 3
+#define BCC_rec 4
+#define Stop 5
+
+
+/*typedef struct sm 
 {
-  char state;
-};
+  int state;
+};*/
 
 int main(int argc, char** argv)
 {
@@ -74,77 +82,83 @@ int main(int argc, char** argv)
 
 //    while (STOP==FALSE) {       /* loop for input */
         
-    struct sm set_rec;
+    //struct sm set_rec;
 
     unsigned char BCCrec, bufrec[5], BCC;
     int send;
+    
+    int state = Start;
 
-    set_rec.state = Start;
-
-    switch (set_rec.state)
+while(state != 7)
+{
+    switch (state)
     {
       case Start:
         res = read(fd, buf, 1);
-        buf[res]=0;
+
         if (buf[0] == 0x5c)
         {
           bufrec[0] = 0x5c;
-          set_rec.state = Flag_rec;
+          state = Flag_rec;
         }
         else
         {
-          set_rec.state == Start;
+          state = Start;
         }
         break;
       
       case Flag_rec:
         res = read(fd, buf, 1);
+
         if (buf[0] == 0x03)
         {
           bufrec[1] = 0x03;
-          set_rec.state = A_rec;
+          printf("0x%02x\n", bufrec[1]);
+          state = A_rec;
         }
         else if(buf[0]== 0x5c)
         {
-          set_rec.state = Flag_rec;
+          state = Flag_rec;
         }
         else
         {
-          set_rec.state = Start;
+          state = Start;
         }
         break;
       
       case A_rec:
         res = read(fd, buf, 1);
+
         if (buf[0] == 0x08)
         {
           bufrec[2] = 0x08;
-          set_rec.state = C_rec;
+          state = C_rec;
         }
         else if(buf[0] == 0x5c)
         {
-          set_rec.state = Flag_rec;
+          state = Flag_rec;
         }
         else
         {
-          set_rec.state = Start;
+          state = Start;
         }
         break;
       
-      case C_rec
+      case C_rec:
         res = read(fd, buf, 1);
+
         if (buf[0] == (bufrec[1]^bufrec[2]))
         {
           bufrec[3] = buf[0];
-          set_rec.state = BCC_rec;
+          state = BCC_rec;
         }
         else if(buf[0] == 0x5c)
         {
-          set_rec.state = Flag_rec;
+          state = Flag_rec;
         }
         else
         {
-          set_rec.state = Start;
+          state = Start;
         }
         break;
 
@@ -153,25 +167,27 @@ int main(int argc, char** argv)
         if (buf[0] == 0x5c)
         {
           bufrec[4] = 0x5c;
-          set_rec.state = Stop;
+          state = Stop;
         }
         else
         {
-          set_rec.state = Start;
+          state = Start;
         }
         break; 
       
       case Stop:
         for (int i =0; i<5; i++)
         {     
-            printf("0x%x\n", bufrec[i]);
+            printf("%d, 0x%02x\n", i, bufrec[i]);
         }
         bufrec[2] = 0x06;
-        bufrec[3] = 0x01^0x06;
+        bufrec[3] = 0x03^0x06;
         send = write(fd, bufrec, 5);
         printf("%d bytes written\n", send);
+        state = 7;
         break;
     }
+}
 
 /*        res = read(fd,buf,255);    returns after 5 chars have been input 
         buf[res]=0;                so we can printf... 

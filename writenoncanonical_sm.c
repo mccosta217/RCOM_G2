@@ -14,6 +14,19 @@
 
 volatile int STOP=FALSE;
 
+
+#define Start 0
+#define Flag_rec 1
+#define A_rec 2
+#define C_rec 3
+#define BCC_rec 4
+#define Stop 5
+
+/*typedef struct sm 
+{
+  int state;
+};*/
+
 int main(int argc, char** argv)
 {
 
@@ -21,7 +34,6 @@ int main(int argc, char** argv)
     struct termios oldtio,newtio;
     unsigned char buf[5], bufua[5];
     int i, sum = 0, speed = 0;
-
     if ( (argc < 2) ||
          ((strcmp("/dev/ttyS0", argv[1])!=0) &&
           (strcmp("/dev/ttyS1", argv[1])!=0) )) {
@@ -53,7 +65,7 @@ int main(int argc, char** argv)
     newtio.c_lflag = 0;
 
     newtio.c_cc[VTIME]    = 0;   /* inter-character timer unused */
-    newtio.c_cc[VMIN]     = 5;   /* blocking read until 5 chars received */
+    newtio.c_cc[VMIN]     = 1;   /* blocking read until 5 chars received */
 
 
 
@@ -89,7 +101,114 @@ int main(int argc, char** argv)
     res = write(fd,buf,5);
     printf("%d bytes written\n", res);
 
-    int ua;
+    
+   // struct sm ua_rec;
+
+    unsigned char BCCrec, bufrec[5];
+    int send;
+
+    int state = Start;
+
+while(state != 7)
+{
+    switch (state)
+    {
+      case Start:
+        res = read(fd, buf, 1);
+        buf[res]=0;
+        if (buf[0] == 0x5c)
+        {
+          bufrec[0] = 0x5c;
+          state = Flag_rec;
+        }
+        else
+        {
+          state = Start;
+        }
+        break;
+      
+      case Flag_rec:
+        res = read(fd, buf, 1);
+        if (buf[0] == 0x03)
+        {
+          bufrec[1] = 0x03;
+          state = A_rec;
+        }
+        else if(buf[0]== 0x5c)
+        {
+          state = Flag_rec;
+        }
+        else
+        {
+          state = Start;
+        }
+        break;
+      
+      case A_rec:
+        res = read(fd, buf, 1);
+        if (buf[0] == 0x06)
+        {
+          bufrec[2] = 0x06;
+          state = C_rec;
+        }
+        else if(buf[0] == 0x5c)
+        {
+          state = Flag_rec;
+        }
+        else
+        {
+          state = Start;
+        }
+        break;
+      
+      case C_rec:
+        res = read(fd, buf, 1);
+        if (buf[0] == (bufrec[1]^bufrec[2]))
+        {
+          bufrec[3] = buf[0];
+          state = BCC_rec;
+        }
+        else if(buf[0] == 0x5c)
+        {
+          state = Flag_rec;
+        }
+        else
+        {
+          state = Start;
+        }
+        break;
+
+      case BCC_rec:
+        res = read(fd, buf, 1);
+        if (buf[0] == 0x5c)
+        {
+          bufrec[4] = 0x5c;
+          state = Stop;
+        }
+        else
+        {
+          state = Start;
+        }
+        break; 
+      
+      case Stop:
+       
+        for (int i =0; i<5; i++)
+        {     
+            printf("0x%02x\n", bufrec[i]);
+        }
+        bufrec[2] = 0x06;
+        bufrec[3] = 0x01^0x06;
+        /*send = write(fd, bufrec, 5);
+        printf("%d bytes written\n", send);*/
+        state = 7;
+        break;
+    }
+  }    
+    
+    
+    
+    /*int ua;
     ua = read(fd, bufua, 5);
     bufua[ua] = 0;
 
