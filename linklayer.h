@@ -97,7 +97,7 @@ int llopen(linkLayer connectionParameters)
   int role = connectionParameters.role;
  // alarm_counter = retries;
 
-  int fd = open(connectionParameters.serialPort, O_RDWR | O_NOCTTY);
+  fd = open(connectionParameters.serialPort, O_RDWR | O_NOCTTY);
   if (fd < 0)
   {
     perror(connectionParameters.serialPort);
