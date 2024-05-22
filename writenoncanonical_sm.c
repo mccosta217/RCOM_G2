@@ -205,9 +205,62 @@ while(state != 7)
         break;
     }
   }    
-    
-    
-    
+  buf = {0x01, 0x02, 0x03, 0x04, 0x5c, 0x06, 0x07, 0x05c, 0x09, 0x5c}
+  int bufsize = 10; //tamanho do buffer definido por nos para já
+  int buff_stuffed = bufsize //variável criada para calcular o tamanho total do buffer depois do stuffing
+
+  for (int i = 0; i < bufsize; i++)
+  {
+    if (buf[i] == 0x5c || buf[i] == 0x5d)
+    {
+      buff_stuffed++;
+    }
+  }
+
+  unsigned char buf2[buff_stuffed + 6]; // flag + A + C + BCC1 + BCC2 + flag + D(sizeof(buf)) = 6 + buff_stuffed
+
+  memset(buf2, 0, buff_stuffed + 6);
+
+  buf2[0] = 0x5c;
+  buf2[1] = 0x01;
+  buf2[2] = 0x00; //?? não sei o que é suposto ser o C
+
+  unsigned char BCC1 = 0x01^0x00;
+  buf2[3] = BCC1;
+
+  unsigned char BCC2 = buf[0];
+
+  for (int i = 0; i < bufsize; i++)
+  {
+    bcc2 = bcc2^buf[i];
+  }
+
+  int j = 4;
+  for (int i = 0; i < bufsize; i++)
+  {
+    if (buf[i] == 0x5c)
+    {
+      buf2[j] = 0x5d;
+      buf2[j+1] = 0x7c;
+      j = j + 2;
+    }
+    else if (buf[i] == 0x5d)
+    {
+      buf2[j] = 0x5d;
+      buf2[j+1] = 0x7c;
+      j = j + 2;
+    }
+    else
+    {
+      buf2[j] = buf[i];
+      j++;
+    }
+  }
+
+  write(fd, buf2, (buff_stuffed + 6));
+
+
+
     /*int ua;
     ua = read(fd, bufua, 5);
     bufua[ua] = 0;
